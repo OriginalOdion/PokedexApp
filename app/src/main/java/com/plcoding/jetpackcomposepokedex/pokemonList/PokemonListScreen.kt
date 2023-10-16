@@ -45,8 +45,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
-import com.google.accompanist.coil.CoilImage
+
 import com.plcoding.jetpackcomposepokedex.R
 import com.plcoding.jetpackcomposepokedex.data.models.PokedexListEntry
 import com.plcoding.jetpackcomposepokedex.ui.theme.RobotoCondensed
@@ -161,7 +163,8 @@ fun PokedexEntry(
     entry: PokedexListEntry,
     navController: NavController,
     modifier: Modifier = Modifier,
-    viewModel: PokemonListViewModel = hiltViewModel()
+    viewModel: PokemonListViewModel = hiltViewModel(),
+
 ){
     val defaultDominantColor = MaterialTheme.colors.surface
     var dominantColor by remember {
@@ -189,26 +192,21 @@ fun PokedexEntry(
             }
     ){
         Column{
-            CoilImage(
-                request = ImageRequest.Builder(LocalContext.current)
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
                     .data(entry.imageUrl)
-                    .target {
-                        viewModel.calcDominantColor(it){color ->
-                            dominantColor = color
-                        }
-                    }
+                    .crossfade(true)
                     .build(),
                 contentDescription = entry.pokemonName,
-                fadeIn = true,
+                onSuccess = {
+                    viewModel.calcDominantColor(it.result.drawable) { color ->
+                        dominantColor = color
+                    }
+                },
                 modifier = Modifier
                     .size(120.dp)
-                    .align(CenterHorizontally)
-            ) {
-                CircularProgressIndicator(
-                    color = MaterialTheme.colors.primary,
-                    modifier = Modifier.scale(0.5f)
+                    .align(CenterHorizontally),
                 )
-            }
             Text(
                 text = entry.pokemonName,
                 fontFamily = RobotoCondensed,
@@ -232,7 +230,7 @@ fun PokedexRow(
             PokedexEntry(
                 entry = entries[rowIndex * 2],
                 navController = navController,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
             )
             Spacer(modifier = Modifier.width(16.dp))
             if(entries.size >= rowIndex * 2 + 2){
@@ -248,3 +246,12 @@ fun PokedexRow(
         Spacer(modifier = Modifier.height(16.dp))
     }
 }
+
+@Composable
+fun LoadingIndicator() {
+    CircularProgressIndicator(
+        color = MaterialTheme.colors.primary,
+        modifier = Modifier.scale(0.5f)
+    )
+}
+
